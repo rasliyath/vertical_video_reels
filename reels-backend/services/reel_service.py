@@ -4,10 +4,16 @@ import os
 import ffmpeg
 from services.face_detector import get_focal_point
 from services.smart_crop import crop_to_vertical
-from services.subtitle_service import (       # ← ADD THIS IMPORT
+from services.subtitle_service import (
     generate_subtitles_for_reel,
     burn_subtitles_to_video
 )
+from groq import Groq
+import os
+
+# Load GROQ API key
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = "llama-3.1-8b-instant"
 
 REELS_DIR = "storage/reels"
 os.makedirs(REELS_DIR, exist_ok=True)
@@ -74,10 +80,14 @@ def generate_subtitles(video_path: str, reel_id: str, subtitle_language: str = N
 
 def generate_headline(transcript: str) -> list:
     """
-    Generate catchy headlines from transcript using Ollama (local LLM)
+    Generate catchy headlines from transcript using GROQ API (cloud LLM)
     """
     try:
-        import ollama
+        if not GROQ_API_KEY:
+            print("⚠️ GROQ_API_KEY not set — using fallback headlines")
+            return ["AI Headline Coming Soon", "Your Story Starts Here", "Watch This Now"]
+        
+        client = Groq(api_key=GROQ_API_KEY)
         
         if not transcript or len(transcript.strip()) < 10:
             return ["AI Headline Coming Soon", "Your Story Starts Here", "Watch This Now"]
@@ -91,17 +101,15 @@ Transcript:
 
 Return only the headlines, one per line, no numbering or extra text:"""
 
-        response = ollama.generate(
-            model="llama3.1",  # Available Ollama model (8B parameters)
-            prompt=prompt,
-            options={
-                "temperature": 0.7,
-                "num_predict": 100
-            }
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=100
         )
         
         # Parse response into list
-        headlines = [line.strip() for line in response['response'].strip().split('\n') if line.strip()]
+        headlines = [line.strip() for line in response.choices[0].message.content.strip().split('\n') if line.strip()]
         
         # Ensure we have 3 headlines
         while len(headlines) < 3:

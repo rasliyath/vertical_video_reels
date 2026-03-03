@@ -2,8 +2,12 @@
 
 import json
 import re
+import os
+from groq import Groq
 
-OLLAMA_MODEL = "mistral"   # using your installed model
+# Load API key from environment
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = "llama-3.1-8b-instant"
 
 
 def generate_headlines_from_transcript(transcript: str) -> list:
@@ -15,7 +19,11 @@ def generate_headlines_from_transcript(transcript: str) -> list:
         return get_default_headlines()
 
     try:
-        import ollama
+        if not GROQ_API_KEY:
+            print("⚠️ GROQ_API_KEY not set — using fallback headlines")
+            return get_default_headlines()
+
+        client = Groq(api_key=GROQ_API_KEY)
 
         short_transcript = transcript[:500].strip()
 
@@ -30,26 +38,24 @@ Transcript: "{short_transcript}"
 
 JSON array:"""
 
-        print(f"📡 Calling Ollama ({OLLAMA_MODEL})...")
+        print(f"📡 Calling GROQ ({GROQ_MODEL})...")
 
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.8, "num_predict": 200}
+            temperature=0.8,
+            max_tokens=200
         )
 
-        response_text = response["message"]["content"].strip()
-        print(f"🤖 Ollama response: {response_text[:200]}")
+        response_text = response.choices[0].message.content.strip()
+        print(f"🤖 GROQ response: {response_text[:200]}")
 
         headlines = parse_headlines_from_response(response_text)
         print(f"✅ Headlines generated: {headlines}")
         return headlines
 
-    except ImportError:
-        print("❌ ollama package not installed — run: pip install ollama")
-        return get_default_headlines()
     except Exception as e:
-        print(f"❌ Ollama error: {e}")
+        print(f"❌ GROQ error: {e}")
         return get_default_headlines()
 
 
