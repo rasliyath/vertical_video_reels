@@ -94,13 +94,13 @@ export default function HeadlineEditor({ reel, onUpdate }) {
 
         {/* Action Buttons */}
         <div style={styles.editorActions}>
-          <button
+          {/* <button
             onClick={handleRegenerate}
             disabled={loading}
             style={styles.regenBtn}
           >
             {loading ? "⏳" : "🔄"} Regenerate
-          </button>
+          </button> */}
           <button onClick={handleSave} style={styles.saveBtn}>
             ✅ Save
           </button>
