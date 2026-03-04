@@ -1,0 +1,17 @@
+# render.yaml — updated
+services:
+  - type: web
+    name: reels-backend
+    runtime: python
+    buildCommand: |
+      apt-get install -y ffmpeg || true
+      pip install --upgrade pip setuptools wheel
+      pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGO_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DB_NAME
+        value: reels_db
