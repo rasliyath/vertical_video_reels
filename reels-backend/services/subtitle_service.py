@@ -1,6 +1,6 @@
 # reels-backend/services/subtitle_service.py
 
-import whisper
+from faster_whisper import WhisperModel
 import ffmpeg
 import os
 import subprocess 
@@ -15,8 +15,11 @@ os.makedirs(SUBTITLES_DIR, exist_ok=True)
 # medium model = much better for Malayalam/Tamil vs base model
 # Options: tiny | base | small | medium | large
 # tiny = fastest, large = most accurate but slow
+IS_PRODUCTION = os.getenv("RENDER", False)
+MODEL_SIZE = "tiny" if IS_PRODUCTION else "medium"
+
 print("⏳ Loading Whisper model...")
-whisper_model = whisper.load_model("medium")
+whisper_model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
 print("✅ Whisper model loaded!")
 
 
@@ -70,32 +73,35 @@ def transcribe_audio(audio_path: str, language: str = None) -> dict:
         audio_path = os.path.abspath(audio_path)
         print(f"🎙️ Transcribing: {audio_path}")
 
-        # Always use Whisper to detect language — don't trust video metadata
-        audio_data = whisper.load_audio(audio_path)
-        audio_trimmed = whisper.pad_or_trim(audio_data)
-        mel = whisper.log_mel_spectrogram(audio_trimmed).to(whisper_model.device)
-        _, probs = whisper_model.detect_language(mel)
-
-        # Get top detected language
-        detected_lang = max(probs, key=probs.get)
-        print(f"🌐 Language probs → {', '.join([f'{k}:{v:.3f}' for k,v in sorted(probs.items(), key=lambda x: -x[1])[:5]])}")
-        print(f"🌐 Detected language: {detected_lang}")
-
-        # If user specified a language, use it; otherwise use auto-detected
-        final_language = language if language else detected_lang
-        print(f"🎯 Final language for transcription: {final_language}")
-
-        result = whisper_model.transcribe(
+        segments_raw, info = whisper_model.transcribe(
             audio_path,
             task="transcribe",
-            language=final_language,
-            verbose=False,
+            language=language,
+            beam_size=5,
             word_timestamps=False,
-            fp16=False,
         )
 
-        print(f"✅ Transcription done in [{final_language}]: {len(result['segments'])} segments")
-        return result
+        detected_lang = info.language
+        print(f"🌐 Detected language: {detected_lang} (prob: {info.language_probability:.2f})")
+
+        # Convert generator to list
+        segments = []
+        full_text = ""
+        for seg in segments_raw:
+            segments.append({
+                "start": seg.start,
+                "end": seg.end,
+                "text": seg.text.strip()
+            })
+            full_text += seg.text
+
+        print(f"✅ Transcription done: {len(segments)} segments")
+
+        return {
+            "text": full_text.strip(),
+            "segments": segments,
+            "language": detected_lang
+        }
 
     except Exception as e:
         raise Exception(f"Transcription failed: {e}")
