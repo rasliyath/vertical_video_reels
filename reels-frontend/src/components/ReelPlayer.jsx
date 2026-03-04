@@ -3,7 +3,8 @@
 import { useRef, useEffect, useState } from "react";
 import HeadlineEditor from "./HeadlineEditor";
 
-const BASE_URL = "http://localhost:8000";
+//const BASE_URL = "http://localhost:8000";
+import { BASE_URL } from "../api/axios";
 
 export default function ReelPlayer({ reel, isActive, currentIndex = 0, totalReels = 1, onHeadlineUpdate }) {
   const videoRef = useRef(null);
@@ -88,7 +89,7 @@ export default function ReelPlayer({ reel, isActive, currentIndex = 0, totalReel
     );
   }
 
-  const videoUrl = `${BASE_URL}/${reel.reel_path.replace(/\\/g, "/")}`;
+const videoUrl = `${BASE_URL}/${reel.reel_path.replace(/\\/g, "/")}`
 
   return (
     <div style={styles.playerContainer}>

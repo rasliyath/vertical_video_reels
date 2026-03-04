@@ -1,0 +1,12 @@
+# ngrok.yml — in project root
+version: "2"
+authtoken: 38KaKxKd0JBSyX3mtBF7Ibe4YnY_6Q5TSCxFjr7dfMAWzhCYY
+
+tunnels:
+  backend:
+    proto: http
+    addr: 8000
+  frontend:
+    proto: http
+    addr: 5173
+    hostname: your-static-domain.ngrok-free.app

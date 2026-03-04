@@ -1,8 +1,11 @@
-// src/api/axios.js
+// reels-frontend/src/api/axios.js
 import axios from "axios";
 
+// Auto-detect base URL — works for localhost AND ngrok
+export const BASE_URL = window.location.origin;
+
 const API = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: `${BASE_URL}/api`,
 });
 
 export default API;

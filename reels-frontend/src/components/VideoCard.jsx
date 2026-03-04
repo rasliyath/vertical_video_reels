@@ -2,12 +2,13 @@
 import ClipRangeSelector from "./ClipRangeSelector";
 import ProcessingStatus from "./ProcessingStatus";
 import { useState } from "react";
+import { BASE_URL } from "../api/axios";
 
 export default function VideoCard({ video, onDelete, onGenerateReel }) {
   const [reelToggle, setReelToggle] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activeReelId, setActiveReelId] = useState(null);
-  const [subtitleLang, setSubtitleLang] = useState("ml");
+  const [subtitleLang, setSubtitleLang] = useState("");
 
   const handleDelete = async () => {
     if (!confirm("Delete this video?")) return;
@@ -50,7 +51,7 @@ const handleConfirmReel = (range) => {
       >
         {video.thumbnail ? (
           <img
-            src={`http://localhost:8000/${video.thumbnail}`}
+            src={`${BASE_URL}/${video.thumbnail}`}
             alt={video.filename}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
@@ -147,7 +148,7 @@ const handleConfirmReel = (range) => {
         {/* Clip Range Selector — shows when toggle is ON */}
         {reelToggle && (
           <>
-            {/* Language Selection */}
+            {/* Language Selection - commented out - using auto-detect
             <div style={{ marginTop: "12px" }}>
               <label style={{ fontSize: "11px", color: "#666", display: "block", marginBottom: "6px" }}>
                 Subtitle Language
@@ -175,6 +176,7 @@ const handleConfirmReel = (range) => {
                 <option value="kn">Kannada (ಕನ್ನಡ)</option>
               </select>
             </div>
+            */}
             <ClipRangeSelector
               duration={video.duration}
               onConfirm={handleConfirmReel}
